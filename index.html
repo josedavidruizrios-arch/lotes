@@ -3,33 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- [EDITABLE] Título en la pestaña del navegador -->
   <title>Altos de Topocoro — Un Proyecto de M&D Topografía</title>
 
-  <!-- Tipografías: Montserrat (Inmobiliaria moderna) + JetBrains Mono (Datos técnicos CAD) -->
+  <!-- [MOTOR] Tipografías del diseño -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Conexión con tu hoja de estilos -->
-  <link rel="stylesheet" href="style.css">
+  <!-- [MOTOR] Estilos base de MapLibre GL JS (Reemplaza a Three.js) -->
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
 
-  <!-- Importación de Three.js y cargador de archivos .GLB (No requiere instalar Node.js) -->
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
+  <!-- [MOTOR] Tu hoja de estilos intacta -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <!-- ========================================================================
-       1. BARRA SUPERIOR (ADN compartido con M&D Topografía & Construcciones)
+       SECCIÓN 1: BARRA SUPERIOR (Marca, Herramientas 3D y Contacto)
        ======================================================================== -->
   <header class="topbar">
-    <!-- Identidad de marca hermana -->
+
+    <!-- [EDITABLE] Nombre del proyecto y marca -->
     <div class="brand">
       <div class="brand-seal">M&amp;D</div>
       <div class="brand-text">
@@ -38,21 +34,20 @@
       </div>
     </div>
 
-    <!-- Herramientas técnicas del visor 3D -->
+    <!-- [MOTOR] Botones de control del mapa satelital (conectados en app.js) -->
     <div class="toolbar-3d">
-      <!-- Botón para subir cualquier archivo .GLB desde el PC o Tablet -->
-      <label for="glb-input" class="tool-btn accent">
-        ↑ Cargar .GLB de prueba
+      <!-- Permite probar cualquier archivo .geojson desde tu PC o tablet sin tocar código -->
+      <label for="geojson-input" class="tool-btn accent">
+        ↑ Cargar .GeoJSON
       </label>
-      <input type="file" id="glb-input" accept=".glb,.gltf" hidden>
+      <input type="file" id="geojson-input" accept=".geojson,.json" hidden>
 
-      <!-- Botones para encender/apagar capas topográficas -->
-      <button id="btn-contours" class="tool-btn active">Curvas de Nivel</button>
-      <button id="btn-wireframe" class="tool-btn">Malla TIN</button>
-      <button id="btn-theme" class="tool-btn">Tema 3D: Oscuro</button>
+      <button id="btn-terrain" class="tool-btn active">Relieve 3D</button>
+      <button id="btn-mojones" class="tool-btn active">Mojones</button>
+      <button id="btn-sat" class="tool-btn">Satélite: Esri</button>
     </div>
 
-    <!-- Bloque de contacto directo (Idéntico a la web de M&D Topografía) -->
+    <!-- [EDITABLE] Teléfono visible y botón de WhatsApp en barra superior -->
     <div class="contact-header">
       <div class="contact-phone">
         <small>ATENCIÓN DIRECTA</small>
@@ -65,54 +60,61 @@
   </header>
 
   <!-- ========================================================================
-       2. CONTENEDOR PRINCIPAL DIVIDIDO (Visor 3D a la izq / Tarjetas a la der)
+       SECCIÓN 2: ESPACIO DIVIDIDO (Izquierda: Mapa 3D | Derecha: Tarjetas)
        ======================================================================== -->
   <main class="workspace">
 
-    <!-- IZQUIERDA: LIENZO 3D 100% DESPEJADO -->
+    <!-- ----------------------------------------------------------------------
+         PANEL IZQUIERDO: VISOR SATELITAL 3D
+         ---------------------------------------------------------------------- -->
     <section class="viewport-container">
-      <canvas id="webgl-canvas"></canvas>
+      <!-- [MOTOR] Aquí se inyecta el mapa satelital 3D (antes era #webgl-canvas) -->
+      <div id="map"></div>
 
-      <!-- Esquina superior izquierda: Indicador de coordenadas técnicas -->
+      <!-- Etiquetas flotantes superiores (HUD) -->
       <div class="hud-top-left">
-        <span class="hud-tag">SISTEMA: MAGNA-SIRGAS / SANTANDER</span>
-        <span class="hud-tag" id="camera-status">ESTACIÓN 01 — VISTA GENERAL</span>
+        <!-- [EDITABLE] Etiqueta de sistema de coordenadas -->
+        <span class="hud-tag">MAGNA-SIRGAS → WGS84 / TOPOCORO</span>
+        <!-- [MOTOR] Se actualiza solo según la estación o lote que toques -->
+        <span class="hud-tag" id="camera-status">ESTACIÓN 01 — PANORAMA EMBALSE</span>
       </div>
 
-      <!-- Barra inferior sobre el 3D: Leyenda de colores y botón de reinicio -->
+      <!-- Barra flotante inferior (Leyenda de colores y botón centrar) -->
       <div class="hud-bottom">
         <div class="legend">
           <span><i class="dot available"></i> Disponible</span>
           <span><i class="dot reserved"></i> Reservado</span>
           <span><i class="dot selected"></i> Seleccionado</span>
         </div>
-        <button id="btn-reset-cam" class="tool-btn">Centrar Cámara</button>
+        <button id="btn-reset-cam" class="tool-btn">Centrar Predio</button>
       </div>
     </section>
 
-    <!-- DERECHA: COLUMNA DE TARJETAS ESTILO M&D (Con números gigantes de fondo) -->
+    <!-- ----------------------------------------------------------------------
+         PANEL DERECHO: TARJETAS TÉCNICAS 01, 02 y 03
+         ---------------------------------------------------------------------- -->
     <aside class="sidebar">
 
-      <!-- TARJETA 01: VIAJE GUIADO POR LA MONTAÑA -->
+      <!-- TARJETA 01: ESTACIONES DE VUELO Y RIEL DE CÁMARA -->
       <div class="md-card" data-watermark="01">
         <div class="card-kicker">RECORRIDO INTERACTIVO</div>
         <h2 class="card-heading">EXPLORACIÓN DEL PREDIO</h2>
 
-        <!-- Lista de estaciones con mira topográfica (⌖) -->
+        <!-- [EDITABLE] Textos de las 4 estaciones (sus coordenadas están en app.js) -->
         <div class="station-list">
           <button class="station-btn active" data-step="0">
             <span class="crosshair">⌖</span>
             <div>
               <strong>01. Panorama Embalse de Topocoro</strong>
-              <small>Relación geográfica y espejo de agua</small>
+              <small>Contexto geográfico y relieve real</small>
             </div>
           </button>
 
           <button class="station-btn" data-step="1">
             <span class="crosshair">⌖</span>
             <div>
-              <strong>02. Vía de Acceso y Relieve</strong>
-              <small>Trazado vial interno y curvas de nivel</small>
+              <strong>02. Aproximación y Ladera</strong>
+              <small>Lectura de inclinación de la montaña</small>
             </div>
           </button>
 
@@ -120,34 +122,34 @@
             <span class="crosshair">⌖</span>
             <div>
               <strong>03. Planta General de Lotes</strong>
-              <small>Subdivisión predial y linderos</small>
+              <small>Subdivisión predial georreferenciada</small>
             </div>
           </button>
 
           <button class="station-btn" data-step="3">
             <span class="crosshair">⌖</span>
             <div>
-              <strong>04. Terrazas Mirador</strong>
-              <small>Acercamiento a zonas construibles</small>
+              <strong>04. Perspectiva Mirador</strong>
+              <small>Vuelo bajo sobre los polígonos</small>
             </div>
           </button>
         </div>
 
-        <!-- Deslizador continuo para mover la cámara como en un riel -->
+        <!-- [MOTOR] Deslizador continuo entre estaciones -->
         <div class="flight-control">
           <div class="flight-labels">
-            <span>RIEL DE CÁMARA</span>
+            <span>RIEL DE CÁMARA 3D</span>
             <span id="flight-percent">0%</span>
           </div>
           <input type="range" id="flight-slider" min="0" max="100" value="0">
         </div>
       </div>
 
-      <!-- TARJETA 02: CUADRÍCULA DE LOTES -->
+      <!-- TARJETA 02: LISTADO DE LOTES (Se llena automáticamente desde lotes.geojson) -->
       <div class="md-card" data-watermark="02">
         <div class="card-kicker">DISPONIBILIDAD</div>
         <h2 class="card-heading">UNIDADES PREDIALES</h2>
-        <!-- Los botones de cada lote se crean automáticamente desde app.js -->
+        <!-- [MOTOR] app.js crea aquí un botón por cada polígono del GeoJSON -->
         <div class="lot-grid" id="lot-grid"></div>
       </div>
 
@@ -155,38 +157,37 @@
       <div class="md-card" data-watermark="03">
         <div class="card-kicker">LEVANTAMIENTO TOPOGRÁFICO</div>
         <div class="ficha-header">
-          <h2 class="card-heading" id="lot-title">Lote 01 — Mirador Norte</h2>
+          <h2 class="card-heading" id="lot-title">Cargando lotes...</h2>
           <span class="status-badge" id="lot-badge">DISPONIBLE</span>
         </div>
 
-        <!-- Tabla de datos técnicos del lote -->
+        <!-- [MOTOR] Todos estos campos se rellenan automáticamente al tocar un lote -->
         <ul class="tech-specs">
           <li>
-            <span><i class="crosshair">⌖</i> Área neta escriturable</span>
-            <strong id="lot-area">2.500 m²</strong>
+            <span><i class="crosshair">⌖</i> Área neta (QGIS)</span>
+            <strong id="lot-area">—</strong>
           </li>
           <li>
-            <span><i class="crosshair">⌖</i> Altitud media (Cota)</span>
-            <strong id="lot-cota">945 m.s.n.m.</strong>
+            <span><i class="crosshair">⌖</i> Altitud estimada (DEM)</span>
+            <strong id="lot-cota">—</strong>
           </li>
           <li>
-            <span><i class="crosshair">⌖</i> Pendiente promedio</span>
-            <strong id="lot-slope">14% (Suave)</strong>
+            <span><i class="crosshair">⌖</i> Centroide (Lat / Lng)</span>
+            <strong id="lot-coords">—</strong>
           </li>
           <li>
-            <span><i class="crosshair">⌖</i> Coordenada Norte / Este</span>
-            <strong id="lot-coords">N 1.278.410 / E 1.082.190</strong>
+            <span><i class="crosshair">⌖</i> Cantidad de mojones</span>
+            <strong id="lot-vertices">—</strong>
           </li>
           <li class="price-row">
             <span>Valor de inversión</span>
-            <strong id="lot-price">$145.000.000 COP</strong>
+            <strong id="lot-price">—</strong>
           </li>
         </ul>
 
-        <!-- Botones de acción sobre el lote -->
         <div class="card-actions">
           <button id="btn-pov" class="btn-outline-copper">
-            👁 Simular Vista Humana desde el Lote (1.70m)
+            👁 Simular Vista desde el Lote hacia el Embalse
           </button>
           <a id="btn-whatsapp-lot" href="#" target="_blank" class="btn-pill-white full">
             SOLICITAR CARTERA TÉCNICA / RESERVAR
@@ -197,7 +198,8 @@
     </aside>
   </main>
 
-  <!-- Conexión con la lógica 3D -->
-  <script type="module" src="app.js"></script>
+  <!-- [MOTOR] Librería MapLibre GL JS + Tu lógica -->
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

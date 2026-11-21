@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Altos de Topocoro — Un Proyecto de M&D Topografía</title>
+
+  <!-- Tipografías: Montserrat (Inmobiliaria moderna) + JetBrains Mono (Datos técnicos CAD) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Conexión con tu hoja de estilos -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Importación de Three.js y cargador de archivos .GLB (No requiere instalar Node.js) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <!-- ========================================================================
+       1. BARRA SUPERIOR (ADN compartido con M&D Topografía & Construcciones)
+       ======================================================================== -->
+  <header class="topbar">
+    <!-- Identidad de marca hermana -->
+    <div class="brand">
+      <div class="brand-seal">M&amp;D</div>
+      <div class="brand-text">
+        <span class="brand-title">ALTOS DE TOPOCORO</span>
+        <span class="brand-subtitle">UN PROYECTO DE M&amp;D TOPOGRAFÍA &amp; CONSTRUCCIONES</span>
+      </div>
+    </div>
+
+    <!-- Herramientas técnicas del visor 3D -->
+    <div class="toolbar-3d">
+      <!-- Botón para subir cualquier archivo .GLB desde el PC o Tablet -->
+      <label for="glb-input" class="tool-btn accent">
+        ↑ Cargar .GLB de prueba
+      </label>
+      <input type="file" id="glb-input" accept=".glb,.gltf" hidden>
+
+      <!-- Botones para encender/apagar capas topográficas -->
+      <button id="btn-contours" class="tool-btn active">Curvas de Nivel</button>
+      <button id="btn-wireframe" class="tool-btn">Malla TIN</button>
+      <button id="btn-theme" class="tool-btn">Tema 3D: Oscuro</button>
+    </div>
+
+    <!-- Bloque de contacto directo (Idéntico a la web de M&D Topografía) -->
+    <div class="contact-header">
+      <div class="contact-phone">
+        <small>ATENCIÓN DIRECTA</small>
+        <strong>+57 300 000 0000</strong>
+      </div>
+      <a href="https://wa.me/573000000000" target="_blank" class="btn-pill-white">
+        CONTACTAR <span>💬</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       2. CONTENEDOR PRINCIPAL DIVIDIDO (Visor 3D a la izq / Tarjetas a la der)
+       ======================================================================== -->
+  <main class="workspace">
+
+    <!-- IZQUIERDA: LIENZO 3D 100% DESPEJADO -->
+    <section class="viewport-container">
+      <canvas id="webgl-canvas"></canvas>
+
+      <!-- Esquina superior izquierda: Indicador de coordenadas técnicas -->
+      <div class="hud-top-left">
+        <span class="hud-tag">SISTEMA: MAGNA-SIRGAS / SANTANDER</span>
+        <span class="hud-tag" id="camera-status">ESTACIÓN 01 — VISTA GENERAL</span>
+      </div>
+
+      <!-- Barra inferior sobre el 3D: Leyenda de colores y botón de reinicio -->
+      <div class="hud-bottom">
+        <div class="legend">
+          <span><i class="dot available"></i> Disponible</span>
+          <span><i class="dot reserved"></i> Reservado</span>
+          <span><i class="dot selected"></i> Seleccionado</span>
+        </div>
+        <button id="btn-reset-cam" class="tool-btn">Centrar Cámara</button>
+      </div>
+    </section>
+
+    <!-- DERECHA: COLUMNA DE TARJETAS ESTILO M&D (Con números gigantes de fondo) -->
+    <aside class="sidebar">
+
+      <!-- TARJETA 01: VIAJE GUIADO POR LA MONTAÑA -->
+      <div class="md-card" data-watermark="01">
+        <div class="card-kicker">RECORRIDO INTERACTIVO</div>
+        <h2 class="card-heading">EXPLORACIÓN DEL PREDIO</h2>
+
+        <!-- Lista de estaciones con mira topográfica (⌖) -->
+        <div class="station-list">
+          <button class="station-btn active" data-step="0">
+            <span class="crosshair">⌖</span>
+            <div>
+              <strong>01. Panorama Embalse de Topocoro</strong>
+              <small>Relación geográfica y espejo de agua</small>
+            </div>
+          </button>
+
+          <button class="station-btn" data-step="1">
+            <span class="crosshair">⌖</span>
+            <div>
+              <strong>02. Vía de Acceso y Relieve</strong>
+              <small>Trazado vial interno y curvas de nivel</small>
+            </div>
+          </button>
+
+          <button class="station-btn" data-step="2">
+            <span class="crosshair">⌖</span>
+            <div>
+              <strong>03. Planta General de Lotes</strong>
+              <small>Subdivisión predial y linderos</small>
+            </div>
+          </button>
+
+          <button class="station-btn" data-step="3">
+            <span class="crosshair">⌖</span>
+            <div>
+              <strong>04. Terrazas Mirador</strong>
+              <small>Acercamiento a zonas construibles</small>
+            </div>
+          </button>
+        </div>
+
+        <!-- Deslizador continuo para mover la cámara como en un riel -->
+        <div class="flight-control">
+          <div class="flight-labels">
+            <span>RIEL DE CÁMARA</span>
+            <span id="flight-percent">0%</span>
+          </div>
+          <input type="range" id="flight-slider" min="0" max="100" value="0">
+        </div>
+      </div>
+
+      <!-- TARJETA 02: CUADRÍCULA DE LOTES -->
+      <div class="md-card" data-watermark="02">
+        <div class="card-kicker">DISPONIBILIDAD</div>
+        <h2 class="card-heading">UNIDADES PREDIALES</h2>
+        <!-- Los botones de cada lote se crean automáticamente desde app.js -->
+        <div class="lot-grid" id="lot-grid"></div>
+      </div>
+
+      <!-- TARJETA 03: FICHA TÉCNICA DEL LOTE SELECCIONADO -->
+      <div class="md-card" data-watermark="03">
+        <div class="card-kicker">LEVANTAMIENTO TOPOGRÁFICO</div>
+        <div class="ficha-header">
+          <h2 class="card-heading" id="lot-title">Lote 01 — Mirador Norte</h2>
+          <span class="status-badge" id="lot-badge">DISPONIBLE</span>
+        </div>
+
+        <!-- Tabla de datos técnicos del lote -->
+        <ul class="tech-specs">
+          <li>
+            <span><i class="crosshair">⌖</i> Área neta escriturable</span>
+            <strong id="lot-area">2.500 m²</strong>
+          </li>
+          <li>
+            <span><i class="crosshair">⌖</i> Altitud media (Cota)</span>
+            <strong id="lot-cota">945 m.s.n.m.</strong>
+          </li>
+          <li>
+            <span><i class="crosshair">⌖</i> Pendiente promedio</span>
+            <strong id="lot-slope">14% (Suave)</strong>
+          </li>
+          <li>
+            <span><i class="crosshair">⌖</i> Coordenada Norte / Este</span>
+            <strong id="lot-coords">N 1.278.410 / E 1.082.190</strong>
+          </li>
+          <li class="price-row">
+            <span>Valor de inversión</span>
+            <strong id="lot-price">$145.000.000 COP</strong>
+          </li>
+        </ul>
+
+        <!-- Botones de acción sobre el lote -->
+        <div class="card-actions">
+          <button id="btn-pov" class="btn-outline-copper">
+            👁 Simular Vista Humana desde el Lote (1.70m)
+          </button>
+          <a id="btn-whatsapp-lot" href="#" target="_blank" class="btn-pill-white full">
+            SOLICITAR CARTERA TÉCNICA / RESERVAR
+          </a>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Conexión con la lógica 3D -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>

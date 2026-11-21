@@ -1,0 +1,482 @@
+/* ==========================================================================
+   1. VARIABLES MAESTRAS (Cambia colores y fuentes desde aquí)
+   ========================================================================== */
+:root {
+  /* Fondos heredados de M&D Topografía */
+  --bg-black: #050505;          /* Fondo principal negro profundo */
+  --bg-card: #161616;           /* Gris carbón de las tarjetas de M&D */
+  --bg-card-hover: #1f1f1f;     /* Color al pasar el mouse */
+  
+  /* Textos */
+  --text-white: #ffffff;
+  --text-gray: #9a9a9a;
+  --text-muted: #5e5e5e;
+
+  /* Sello propio de la Inmobiliaria (Acento Cobre / Tierra Topocoro) */
+  --accent-copper: #c49a6c;
+  --accent-green: #4ade80;      /* Indicador de lote disponible */
+
+  /* Bordes y tipografías */
+  --border-dark: #262626;
+  --font-main: 'Montserrat', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Reinicio básico */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-black);
+  color: var(--text-white);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   2. BARRA SUPERIOR (Estilo corporativo M&D Topografía)
+   ========================================================================== */
+.topbar {
+  height: 72px;
+  background-color: var(--bg-black);
+  border-bottom: 1px solid var(--border-dark);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-seal {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-copper);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--accent-copper);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.brand-subtitle {
+  font-size: 0.62rem;
+  color: var(--text-gray);
+  letter-spacing: 0.12em;
+  margin-top: 2px;
+}
+
+/* Botones centrales de herramientas 3D */
+.toolbar-3d {
+  display: flex;
+  gap: 8px;
+}
+
+.tool-btn {
+  background: #121212;
+  color: var(--text-gray);
+  border: 1px solid var(--border-dark);
+  padding: 8px 13px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tool-btn:hover,
+.tool-btn.active {
+  color: var(--text-white);
+  border-color: var(--accent-copper);
+  background: rgba(196, 154, 108, 0.12);
+}
+
+.tool-btn.accent {
+  border-color: var(--accent-copper);
+  color: var(--accent-copper);
+}
+
+/* Contacto derecho y botón píldora blanco */
+.contact-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.contact-phone {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-phone small {
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--text-gray);
+}
+
+.contact-phone strong {
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+/* Botón blanco redondeado característico de M&D */
+.btn-pill-white {
+  background: var(--text-white);
+  color: var(--bg-black);
+  text-decoration: none;
+  padding: 10px 22px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-pill-white:hover {
+  background: var(--accent-copper);
+  color: var(--bg-black);
+}
+
+.btn-pill-white.full {
+  width: 100%;
+  padding: 14px;
+}
+
+/* ==========================================================================
+   3. ESPACIO DE TRABAJO DIVIDIDO (Visor 3D + Columna derecha)
+   ========================================================================== */
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr 440px; /* 440px fijos para las tarjetas */
+  flex: 1;
+  min-height: 0;
+}
+
+/* Contenedor del visor 3D */
+.viewport-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-right: 1px solid var(--border-dark);
+}
+
+#webgl-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+}
+
+/* Etiquetas discretas en las esquinas del 3D (No tapan el lote) */
+.hud-top-left {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.hud-tag {
+  background: rgba(5, 5, 5, 0.78);
+  border: 1px solid var(--border-dark);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-gray);
+}
+
+.hud-bottom {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+
+.hud-bottom button {
+  pointer-events: auto;
+}
+
+.legend {
+  background: rgba(5, 5, 5, 0.82);
+  border: 1px solid var(--border-dark);
+  padding: 8px 14px;
+  border-radius: 6px;
+  display: flex;
+  gap: 16px;
+  font-size: 0.72rem;
+  color: var(--text-gray);
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.dot.available { background: var(--accent-green); }
+.dot.reserved { background: #777777; }
+.dot.selected { background: var(--accent-copper); }
+
+/* ==========================================================================
+   4. COLUMNA LATERAL Y TARJETAS CON MARCA DE AGUA ("01", "02", "03")
+   ========================================================================== */
+.sidebar {
+  background: var(--bg-black);
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Tarjeta gris carbón inspirada en el bloque "03 INGENIERÍA CIVIL" */
+.md-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-dark);
+  border-radius: 10px;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Número gigante de fondo automático usando data-watermark */
+.md-card::before {
+  content: attr(data-watermark);
+  position: absolute;
+  right: 10px;
+  bottom: -25px;
+  font-size: 7.5rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.03);
+  pointer-events: none;
+  line-height: 1;
+}
+
+.card-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--accent-copper);
+  margin-bottom: 4px;
+}
+
+.card-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 14px;
+}
+
+/* Lista de estaciones de cámara */
+.station-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.station-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-dark);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-white);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.station-btn:hover,
+.station-btn.active {
+  border-color: var(--accent-copper);
+  background: rgba(196, 154, 108, 0.1);
+}
+
+.crosshair {
+  color: var(--accent-copper);
+  font-style: normal;
+  font-size: 0.95rem;
+}
+
+.station-btn strong {
+  display: block;
+  font-size: 0.8rem;
+}
+
+.station-btn small {
+  font-size: 0.7rem;
+  color: var(--text-gray);
+}
+
+/* Barra deslizadora de vuelo */
+.flight-control {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-dark);
+}
+
+.flight-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-gray);
+  margin-bottom: 6px;
+}
+
+#flight-slider {
+  width: 100%;
+  accent-color: var(--accent-copper);
+  cursor: pointer;
+}
+
+/* Cuadrícula de selección de lotes */
+.lot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.lot-item-btn {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-dark);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-white);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lot-item-btn:hover,
+.lot-item-btn.active {
+  border-color: var(--accent-copper);
+  background: rgba(196, 154, 108, 0.14);
+}
+
+/* Ficha técnica del lote */
+.ficha-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.status-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--accent-green);
+  color: var(--accent-green);
+}
+
+.tech-specs {
+  list-style: none;
+  margin: 10px 0 18px 0;
+}
+
+.tech-specs li {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.8rem;
+}
+
+.tech-specs li span {
+  color: var(--text-gray);
+}
+
+.tech-specs li strong {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.tech-specs li.price-row strong {
+  color: var(--accent-copper);
+  font-size: 0.95rem;
+}
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-outline-copper {
+  width: 100%;
+  padding: 11px;
+  background: transparent;
+  border: 1px solid var(--accent-copper);
+  color: var(--accent-copper);
+  border-radius: 50px;
+  font-family: var(--font-main);
+  font-weight: 600;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-copper:hover {
+  background: rgba(196, 154, 108, 0.15);
+}
+
+/* ==========================================================================
+   5. ADAPTACIÓN PARA TABLET Y CELULAR
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: 52vh 48vh;
+  }
+  .contact-header {
+    display: none;
+  }
+}
+
